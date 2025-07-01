@@ -2,18 +2,11 @@ package id.go.bssn.blpid.dto;
 
 import id.go.bssn.blpid.property.SignatureProperty;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-public class PdfHashRequest {
-
-    @NotBlank(message = "base64pdf tidak boleh kosong")
+public class PlaceholderFileRequest {
     private String base64pdf;
-
-    @NotNull(message = "signatureProperties tidak boleh null")
-    private List<@Valid SignatureProperty> signatureProperties;
+    private List<SignatureProperty> signatureProperties;
 
     public String getBase64pdf() {
         return base64pdf;

@@ -1,13 +1,7 @@
 package id.go.bssn.blpid.dto;
 
-import jakarta.validation.constraints.NotBlank;
-
-public class PdfPackRequest {
-
-    @NotBlank(message = "base64HashPdf tidak boleh kosong")
+public class PackFileRequest {
     private String base64HashPdf;
-
-    @NotBlank(message = "signValue tidak boleh kosong")
     private String signValue;
 
     public String getBase64HashPdf() {
