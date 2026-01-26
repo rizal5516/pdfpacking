@@ -1,4 +1,4 @@
-package id.go.bssn.blpid.dto;
+package id.go.bssn.blpid.v1.dto;
 
 import java.util.List;
 

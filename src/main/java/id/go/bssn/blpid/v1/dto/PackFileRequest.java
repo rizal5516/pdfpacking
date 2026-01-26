@@ -1,8 +1,9 @@
-package id.go.bssn.blpid.dto;
+package id.go.bssn.blpid.v1.dto;
 
 public class PackFileRequest {
     private String base64HashPdf;
     private String signValue;
+    private String signatureFieldName; // Tambahkan field ini
 
     public String getBase64HashPdf() {
         return base64HashPdf;
@@ -18,5 +19,13 @@ public class PackFileRequest {
 
     public void setSignValue(String signValue) {
         this.signValue = signValue;
+    }
+
+    public String getSignatureFieldName() {
+        return signatureFieldName;
+    }
+
+    public void setSignatureFieldName(String signatureFieldName) {
+        this.signatureFieldName = signatureFieldName;
     }
 }

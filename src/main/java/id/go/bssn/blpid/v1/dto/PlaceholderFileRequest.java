@@ -1,6 +1,6 @@
-package id.go.bssn.blpid.dto;
+package id.go.bssn.blpid.v1.dto;
 
-import id.go.bssn.blpid.property.SignatureProperty;
+import id.go.bssn.blpid.v1.property.SignatureProperty;
 
 import java.util.List;
 

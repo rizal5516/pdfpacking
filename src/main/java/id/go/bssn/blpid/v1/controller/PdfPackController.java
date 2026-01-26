@@ -1,15 +1,14 @@
-package id.go.bssn.blpid.controller;
+package id.go.bssn.blpid.v1.controller;
 
-import id.go.bssn.blpid.dto.*;
-import id.go.bssn.blpid.property.SignatureProperty;
-import id.go.bssn.blpid.service.PdfPackService;
-import jakarta.validation.Valid;
+import id.go.bssn.blpid.v1.dto.*;
+import id.go.bssn.blpid.v1.dto.PackRequest;
+import id.go.bssn.blpid.v1.dto.PlaceholderRequest;
+import id.go.bssn.blpid.v1.service.PdfPackService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 

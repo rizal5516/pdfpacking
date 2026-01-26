@@ -1,11 +1,11 @@
-package id.go.bssn.blpid.utils;
+package id.go.bssn.blpid.v1.utils;
 
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.*;
 import com.itextpdf.signatures.*;
-import id.go.bssn.blpid.property.SignatureProperty;
+import id.go.bssn.blpid.v1.property.SignatureProperty;
 
 import java.io.*;
 import java.security.MessageDigest;
@@ -126,6 +126,125 @@ public class PdfHashGenerator {
         PdfSigner signer = new PdfSigner(reader, baos, new StampingProperties());
 
         signer.setFieldName(signatureFieldName);
+
+        if (Boolean.TRUE.equals(prop.isVisibleSignature())) {
+            if (prop.getImageBase64() == null || prop.getImageBase64().isEmpty()) {
+                throw new IllegalArgumentException("imageBase64 wajib diisi jika visibleSignature = true");
+            }
+
+            Rectangle rect = new Rectangle(400, 50, 150, 80);
+            if (prop.getX() != null && prop.getY() != null && prop.getWidth() != null && prop.getHeight() != null) {
+                rect = new Rectangle(prop.getX(), prop.getY(), prop.getWidth(), prop.getHeight());
+            }
+
+            PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+            appearance.setReuseAppearance(false);
+            appearance.setPageRect(rect);
+            appearance.setPageNumber(prop.getPageNumber() != null ? prop.getPageNumber() : 1);
+
+            if (prop.getReason() != null) appearance.setReason(prop.getReason());
+            if (prop.getLocation() != null) appearance.setLocation(prop.getLocation());
+            if (prop.getContactInfo() != null) appearance.setContact(prop.getContactInfo());
+
+            try {
+                byte[] imageBytes = Base64.getDecoder().decode(prop.getImageBase64());
+                ImageData image = ImageDataFactory.create(imageBytes);
+                appearance.setSignatureGraphic(image);
+                appearance.setRenderingMode(PdfSignatureAppearance.RenderingMode.GRAPHIC);
+            } catch (Exception e) {
+                throw new RuntimeException("Gagal decode imageBase64 untuk signatureGraphic", e);
+            }
+        } else {
+            signer.getSignatureAppearance().setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
+        }
+
+        HashCaptureSignatureContainer container = new HashCaptureSignatureContainer();
+        signer.signExternalContainer(container, 8192);
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(container.getDataToSign());
+
+        HashResult result = new HashResult();
+        result.hash = hash;
+        result.pdfWithPlaceholder = baos.toByteArray();
+        return result;
+    }
+
+    public static HashResult generatePdfHashOnlyWithAppend(InputStream inputStream,
+                                                           String fieldName,
+                                                           SignatureProperty prop) throws Exception {
+        PdfReader reader = new PdfReader(inputStream);
+        reader.setUnethicalReading(true);
+
+        return generatePdfHashOnlyWithAppend(reader, fieldName, prop);
+    }
+
+    public static HashResult generatePdfHashOnlyWithAppend(PdfReader reader,
+                                                           String fieldName,
+                                                           SignatureProperty prop) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        // PENTING: Gunakan append mode
+        StampingProperties stampingProps = new StampingProperties();
+        stampingProps.useAppendMode();
+
+        PdfSigner signer = new PdfSigner(reader, baos, stampingProps);
+        signer.setFieldName(fieldName);
+
+        if (Boolean.TRUE.equals(prop.isVisibleSignature())) {
+            if (prop.getImageBase64() == null || prop.getImageBase64().isEmpty()) {
+                throw new IllegalArgumentException("imageBase64 wajib diisi jika visibleSignature = true");
+            }
+
+            Rectangle rect = new Rectangle(400, 50, 150, 80);
+            if (prop.getX() != null && prop.getY() != null && prop.getWidth() != null && prop.getHeight() != null) {
+                rect = new Rectangle(prop.getX(), prop.getY(), prop.getWidth(), prop.getHeight());
+            }
+
+            PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+            appearance.setReuseAppearance(false);
+            appearance.setPageRect(rect);
+            appearance.setPageNumber(prop.getPageNumber() != null ? prop.getPageNumber() : 1);
+
+            if (prop.getReason() != null) appearance.setReason(prop.getReason());
+            if (prop.getLocation() != null) appearance.setLocation(prop.getLocation());
+            if (prop.getContactInfo() != null) appearance.setContact(prop.getContactInfo());
+
+            try {
+                byte[] imageBytes = Base64.getDecoder().decode(prop.getImageBase64());
+                ImageData image = ImageDataFactory.create(imageBytes);
+                appearance.setSignatureGraphic(image);
+                appearance.setRenderingMode(PdfSignatureAppearance.RenderingMode.GRAPHIC);
+            } catch (Exception e) {
+                throw new RuntimeException("Gagal decode imageBase64 untuk signatureGraphic", e);
+            }
+        } else {
+            signer.getSignatureAppearance().setRenderingMode(PdfSignatureAppearance.RenderingMode.DESCRIPTION);
+        }
+
+        HashCaptureSignatureContainer container = new HashCaptureSignatureContainer();
+        signer.signExternalContainer(container, 8192);
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(container.getDataToSign());
+
+        HashResult result = new HashResult();
+        result.hash = hash;
+        result.pdfWithPlaceholder = baos.toByteArray();
+        return result;
+    }
+
+    public static HashResult generatePdfHashOnlyWithUnethicalReading(PdfReader reader,
+                                                                     String fieldName,
+                                                                     SignatureProperty prop) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        // Untuk PDF yang corrupt tapi belum ada signature, jangan gunakan append mode
+        StampingProperties stampingProps = new StampingProperties();
+        // Tidak menggunakan useAppendMode() karena belum ada signature sebelumnya
+
+        PdfSigner signer = new PdfSigner(reader, baos, stampingProps);
+        signer.setFieldName(fieldName);
 
         if (Boolean.TRUE.equals(prop.isVisibleSignature())) {
             if (prop.getImageBase64() == null || prop.getImageBase64().isEmpty()) {

@@ -1,4 +1,4 @@
-package id.go.bssn.blpid.utils;
+package id.go.bssn.blpid.v1.utils;
 
 import com.itextpdf.signatures.IExternalSignatureContainer;
 import com.itextpdf.kernel.pdf.PdfDictionary;

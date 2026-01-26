@@ -1,4 +1,4 @@
-package id.go.bssn.blpid.property;
+package id.go.bssn.blpid.v1.property;
 
 import jakarta.validation.constraints.NotNull;
 
