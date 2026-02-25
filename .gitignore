@@ -1,8 +1,15 @@
+# Build output
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+### Environment & Secrets — JANGAN PERNAH COMMIT ###
+.env
+.env.local
+.env.production
+*.env
 
 ### STS ###
 .apt_generated
