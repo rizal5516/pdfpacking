@@ -1,0 +1,39 @@
+# docker-compose.yml
+# Untuk testing lokal sebelum deploy ke K8s
+# JANGAN gunakan ini langsung di production — gunakan K8s manifest
+
+services:
+  packing-pdf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: packing-pdf:local
+    ports:
+      - "8080:8080"
+
+    # Semua secrets via environment — JANGAN hardcode di sini
+    # Di production, gunakan Kubernetes Secret atau Vault
+    env_file:
+      - .env
+
+    # Hardening runtime
+    read_only: true           # Filesystem read-only
+    tmpfs:
+      - /tmp:size=100m        # Spring Boot butuh /tmp untuk upload sementara
+
+    security_opt:
+      - no-new-privileges:true  # Cegah privilege escalation
+
+    # Resource limit — sesuaikan dengan beban aktual
+    # iText7 PDF processing bisa memory-intensive
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+        reservations:
+          memory: 512m
+          cpus: "0.25"
+
+    # Restart policy
+    restart: unless-stopped

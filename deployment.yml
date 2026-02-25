@@ -1,0 +1,110 @@
+# k8s/deployment-production.yml
+# Versi deployment yang sudah diperbaiki untuk production
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: packing-pdf
+  namespace: blpid-pdfsignpacking-prod
+  labels:
+    app: packing-pdf
+    version: "1.0.0"   # ← ganti dengan semver, bukan latest
+spec:
+  replicas: 2           # ← minimal 2 untuk HA di production
+  selector:
+    matchLabels:
+      app: packing-pdf
+  template:
+    metadata:
+      labels:
+        app: packing-pdf
+    spec:
+      # Tidak perlu hostPID, hostNetwork, atau hostIPC
+      automountServiceAccountToken: false
+
+      containers:
+        - name: packing-pdf
+          # ← JANGAN gunakan :latest di production
+          # Gunakan tag semver atau image digest, contoh:
+          # image: registry.example.com/packing-pdf:1.0.0
+          # image: registry.example.com/packing-pdf@sha256:abc123...
+          image: registry.example.com/packing-pdf:1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+
+          # Environment non-sensitif
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"
+            - name: SERVER_PORT
+              value: "8080"
+
+          # Environment sensitif dari Secret K8s
+          # kubectl create secret generic packing-pdf-secrets \
+          #   --from-literal=BSRE_AUTH=xxx \
+          #   --from-literal=BSRE_NIK=xxx \
+          #   --from-literal=BSRE_PASSPHRASE=xxx \
+          #   --from-literal=APP_API_KEY=xxx
+          envFrom:
+            - secretRef:
+                name: packing-pdf-secrets
+
+          # Resource limit yang realistis untuk Java + iText7 PDF processing
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"    # ← dinaikkan dari 512Mi, Java 24 + iText7 butuh lebih
+              cpu: "500m"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65532     # ← UID distroless nonroot
+            runAsGroup: 65532
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+
+          # Volume untuk direktori temp yang dibutuhkan Spring Boot
+          volumeMounts:
+            - name: tmp-dir
+              mountPath: /tmp
+
+          # Health check menggunakan Spring Boot Actuator
+          # Pastikan spring-boot-starter-actuator ada di pom.xml
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 45
+            timeoutSeconds: 5
+            periodSeconds: 30
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12   # beri 60 detik untuk startup (12 × 5s)
+
+      volumes:
+        - name: tmp-dir
+          emptyDir:
+            sizeLimit: 500Mi   # batasi ukuran tmp
+
+      restartPolicy: Always
